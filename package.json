@@ -10,7 +10,16 @@
 		"format:check": "prettier --check src/",
 		"typecheck": "tsc --noEmit"
 	},
+	"peerDependencies": {
+		"@types/fabric": "^5.3.9"
+	},
+	"peerDependenciesMeta": {
+		"@types/fabric": {
+			"optional": true
+		}
+	},
 	"devDependencies": {
+		"@types/fabric": "^5.3.9",
 		"@types/node": "^22.0.0",
 		"@typescript-eslint/eslint-plugin": "^8.0.0",
 		"@typescript-eslint/parser": "^8.0.0",
