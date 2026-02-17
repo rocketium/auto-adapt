@@ -405,3 +405,119 @@ export type BaseElementJSON = {
 	scaleY?: number;
 	category?: CreativeElementCategory;
 };
+
+// ============================================================================
+// Canvas Element JSON Types
+// ============================================================================
+
+export type CreativeBoxJSON = Omit<
+	BaseElementJSON,
+	| 'left'
+	| 'top'
+	| 'angle'
+	| 'opacity'
+	| 'shadow'
+	| 'visible'
+	| 'globalCompositeOperation'
+	| 'selectable'
+	| 'border'
+	| 'padding'
+	| 'cornerRadius'
+	| 'layerRules'
+> & {
+	type: 'rect';
+	dataType: 'CREATIVE_BOX';
+	zIndex: number;
+	layerRules?: LayerRules;
+};
+
+export type ImageContainerJSON = Omit<BaseElementJSON, 'type'> & {
+	type: 'image-container';
+	dataType: 'IMAGE';
+	objectPosition: ObjectPosition;
+	imageOriginX: ORIGIN_X;
+	imageOriginY: ORIGIN_Y;
+	imageScale: number;
+	imageRotation: number;
+	imageLeft: number;
+	imageTop: number;
+	imageWidth: number;
+	imageHeight: number;
+	objectFit: ObjectFit;
+	src: string;
+	layerStartTime?: number;
+	layerEndTime?: number;
+	propertiesVisible?: boolean;
+	exportSrc?: string;
+	originalSrc?: string;
+	displayText: string;
+	layerRules?: LayerRules;
+	flipX?: boolean;
+	flipY?: boolean;
+	filter?: Partial<SerializedImageFilter>;
+	animationTrack?: AnimationTrack;
+	animationReference?: AnimationReference;
+};
+
+export type PathJSON = Omit<BaseElementJSON, 'border' | 'padding' | 'cornerRadius'> & {
+	type: 'shape-container';
+	dataType: 'SHAPE';
+	path: (string | number)[][];
+	layerStartTime?: number;
+	layerEndTime?: number;
+	propertiesVisible?: boolean;
+	propertiesFill?: string;
+	layerRules?: LayerRules;
+} & Scale;
+
+export type RoundedRectJSON = Omit<BaseElementJSON, 'border' | 'padding'> & {
+	type: 'rounded-rect';
+	dataType: 'SHAPE';
+	scale: number;
+	layerStartTime?: number;
+	layerEndTime?: number;
+	propertiesVisible?: boolean;
+	propertiesFill?: string;
+	displayText: string;
+	layerRules?: LayerRules;
+};
+
+export type TextContainerJSON = Omit<BaseElementJSON, 'type'> & {
+	type: 'text-container';
+	dataType: 'TEXT';
+	autoFit: boolean;
+	autoFitSizes: [number | null, number | null];
+	textCase: TextCase;
+	serializedText: string;
+	fontMetaData: FontMetaData;
+	objectPosition: ObjectPosition;
+	textleft: number;
+	textTop: number;
+	textHeight: number;
+	textFill: SerializedFillType;
+	fontFamily: string;
+	fontWeight: number | string;
+	fontSize: number;
+	text: string;
+	underline: boolean;
+	overline: boolean;
+	linethrough: boolean;
+	textAlign: string;
+	fontStyle: '' | 'normal' | 'italic' | 'oblique';
+	lineHeight: number;
+	charSpacing: number;
+	styles: unknown[];
+	wordStyle: WordStyles;
+	missingGlyphChars: [];
+	layerStartTime?: number;
+	layerEndTime?: number;
+	propertiesVisible?: boolean;
+	wordSpacing?: number;
+	offsets: {
+		linethrough?: number;
+	};
+	linethroughOffset: -0.315;
+	underlineOffset: 0.1;
+	displayText: string;
+	textAnimationTrack?: TextAnimation;
+};
