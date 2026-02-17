@@ -602,3 +602,25 @@ export type GroupContainerJSON = Omit<
 	propertiesVisible?: boolean;
 	layerRules?: LayerRules;
 };
+
+// ============================================================================
+// Union & Overrides
+// ============================================================================
+
+export type CanvasElementJSON =
+	| CreativeBoxJSON
+	| ImageContainerJSON
+	| PathJSON
+	| RoundedRectJSON
+	| TextContainerJSON
+	| VideoContainerJSON
+	| AudioContainerJSON
+	| SvgJSON
+	| GroupContainerJSON;
+
+export type CanvasElementWithOverrides<T extends CanvasElementJSON> = Prettify<
+	T & {
+		zIndex: number;
+		overrides: Record<string, Partial<T> & { zIndex: number }>;
+	}
+>;
