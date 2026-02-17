@@ -521,3 +521,84 @@ export type TextContainerJSON = Omit<BaseElementJSON, 'type'> & {
 	displayText: string;
 	textAnimationTrack?: TextAnimation;
 };
+
+export type VideoContainerJSON = Omit<BaseElementJSON, 'type'> & {
+	type: 'video-container';
+	dataType: 'VIDEO';
+	objectPosition: ObjectPosition;
+	imageScale: number;
+	imageLeft: number;
+	imageTop: number;
+	imageWidth: number;
+	imageHeight: number;
+	objectFit: ObjectFit;
+	src: string;
+	layerStartTime?: number;
+	layerEndTime?: number;
+	propertiesVisible?: boolean;
+	volume?: number;
+	trimmerStartTime?: number;
+	displayText: string;
+	layerRules?: LayerRules;
+	imageOriginX: ORIGIN_X;
+	imageOriginY: ORIGIN_Y;
+	flipX: boolean;
+	flipY: boolean;
+	filter: Partial<SerializedImageFilter>;
+	imageRotation: number;
+	originalSrc?: string;
+	exportSrc?: string;
+	animationTrack?: AnimationTrack;
+	animationReference?: AnimationReference;
+};
+
+export type AudioContainerJSON = {
+	type: 'audio-container';
+	dataType: 'AUDIO';
+	src: string;
+	layerStartTime?: number;
+	layerEndTime?: number;
+	volume?: number;
+	id: string;
+	displayText: string;
+	selectable?: boolean;
+	trimmerStartTime?: number;
+	layerRules?: LayerRules;
+};
+
+export type SvgJSON = Omit<BaseElementJSON, 'border' | 'padding' | 'cornerRadius' | 'fill'> & {
+	type: 'svg-container';
+	dataType: 'SHAPE';
+	src: string;
+	layerStartTime?: number;
+	layerEndTime?: number;
+	propertiesVisible?: boolean;
+	objectFit?: ObjectFit;
+	imageRotation?: number;
+	objectPosition?: ObjectPosition;
+	imageLeft?: number;
+	imageTop?: number;
+	imageWidth?: number;
+	imageHeight?: number;
+	flipX?: boolean;
+	flipY?: boolean;
+	imageScale: number;
+	animationTrack?: AnimationTrack;
+	animationReference?: AnimationReference;
+	colorMap?: ColorMap;
+	imageOriginX?: ORIGIN_X;
+	imageOriginY?: ORIGIN_Y;
+} & Scale;
+
+export type GroupContainerJSON = Omit<
+	BaseElementJSON,
+	'type' | 'fill' | 'border' | 'padding' | 'cornerRadius' | 'layerRules'
+> & {
+	type: 'group-container';
+	dataType: 'GROUP';
+	objects: string[];
+	isAlreadyGrouped: boolean;
+	isMaskedGroup: boolean;
+	propertiesVisible?: boolean;
+	layerRules?: LayerRules;
+};
