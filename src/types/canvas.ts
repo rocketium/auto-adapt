@@ -94,3 +94,50 @@ export type SerializedImageFilter = {
 export type ColorMap = {
 	[key: string]: FillOptions;
 };
+
+// ============================================================================
+// Element Constants & Enums
+// ============================================================================
+
+export const CANVAS_EDITOR_ELEMENT = {
+	TEXT: 'TEXT',
+	SHAPE: 'SHAPE',
+	IMAGE: 'IMAGE',
+	GROUP: 'GROUP',
+	CREATIVE_BOX: 'CREATIVE_BOX',
+	VIDEO: 'VIDEO',
+	AUDIO: 'AUDIO',
+	CANVAS_MASK: 'CANVAS_MASK',
+} as const;
+
+export type CANVAS_EDITOR_ELEMENT_TYPE = (typeof CANVAS_EDITOR_ELEMENT)[keyof typeof CANVAS_EDITOR_ELEMENT];
+
+export enum CreativeElementCategory {
+	HERO_IMAGE = 'HERO_IMAGE',
+	PRODUCT_IMAGE = 'PRODUCT_IMAGE',
+	BACKGROUND = 'BACKGROUND',
+	LOGO = 'LOGO',
+	ICON = 'ICON',
+	HEADLINE = 'HEADLINE',
+	SUBHEADLINE = 'SUBHEADLINE',
+	BODY_COPY = 'BODY_COPY',
+	PRICE = 'PRICE',
+	CTA = 'CTA',
+	TERMS_CONDITIONS = 'TERMS_CONDITIONS',
+	REVIEWS_TESTIMONIALS = 'REVIEWS_TESTIMONIALS',
+	WARRANTY_INFO = 'WARRANTY_INFO',
+	BADGE = 'BADGE',
+	NEW_PRODUCT_LABEL = 'NEW_PRODUCT_LABEL',
+	OTHER = 'OTHER',
+}
+
+// ============================================================================
+// Layer & Group Types
+// ============================================================================
+
+export type LayerRules = {
+	editingLocked?: boolean;
+	maxCharCount?: number;
+};
+
+export type GroupPath = string | null;
