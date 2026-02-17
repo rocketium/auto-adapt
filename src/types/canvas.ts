@@ -279,3 +279,129 @@ export type TextAnimation = {
 	end: number;
 	loop?: number;
 };
+
+// ============================================================================
+// Serialized Fabric Types (needed for BaseElementJSON)
+// ============================================================================
+
+export type SerializedRoundedRect = SerializedFabricBaseObject & {
+	properties?: {
+		layerStartTime?: number;
+		layerEndTime?: number;
+		visible?: boolean;
+		fill?: string;
+		outputFormat?: string;
+		layerRules?: LayerRules;
+		clipPathId?: string;
+		clipPathParentId?: string;
+	};
+	animatable?: boolean;
+};
+
+export type SerializedFabricBaseObject = Pick<
+	IObjectOptions,
+	| 'originX'
+	| 'originY'
+	| 'left'
+	| 'top'
+	| 'width'
+	| 'height'
+	| 'stroke'
+	| 'strokeWidth'
+	| 'strokeDashArray'
+	| 'strokeLineCap'
+	| 'strokeDashOffset'
+	| 'strokeLineJoin'
+	| 'strokeUniform'
+	| 'strokeMiterLimit'
+	| 'scaleX'
+	| 'scaleY'
+	| 'angle'
+	| 'flipX'
+	| 'flipY'
+	| 'opacity'
+	| 'visible'
+	| 'backgroundColor'
+	| 'fillRule'
+	| 'paintFirst'
+	| 'globalCompositeOperation'
+	| 'skewX'
+	| 'skewY'
+	| 'data'
+	| 'selectable'
+	| 'hoverCursor'
+	| 'moveCursor'
+	| 'hasControls'
+	| 'hasBorders'
+	| 'lockRotation'
+	| 'lockMovementY'
+	| 'lockScalingX'
+	| 'lockScalingY'
+	| 'lockSkewingX'
+	| 'lockSkewingY'
+	| 'lockScalingFlip'
+	| 'inverted'
+	| 'absolutePositioned'
+	| 'centeredScaling'
+> & {
+	version: '5.3.0';
+	type:
+		| 'rect'
+		| 'circle'
+		| 'triangle'
+		| 'line'
+		| 'polygon'
+		| 'polyline'
+		| 'path'
+		| 'group'
+		| 'image'
+		| 'text'
+		| 'rounded-rect'
+		| 'text-container'
+		| 'image-container'
+		| 'custom-textbox'
+		| 'shape-container'
+		| 'video-container'
+		| 'audio-container'
+		| 'svg-container'
+		| 'group-container';
+	fill?: SerializedFillType;
+	shadow?: SerializedFabricShadow;
+	globalCompositeOperation: GlobalCompositeOperation;
+	rx?: number;
+	ry?: number;
+	evented?: boolean;
+	clipPath?: SerializedRoundedRect;
+};
+
+// ============================================================================
+// Base Element JSON
+// ============================================================================
+
+export type BaseElementJSON = {
+	id: string;
+	type: SerializedFabricBaseObject['type'];
+	displayText: string;
+	dataType: CANVAS_EDITOR_ELEMENT_TYPE;
+	left: number;
+	top: number;
+	width: number;
+	height: number;
+	angle: number;
+	opacity: number;
+	shadow: SerializedFabricShadow | null;
+	visible: boolean;
+	globalCompositeOperation: GlobalCompositeOperation;
+	selectable: boolean;
+	fill: SerializedFillType;
+	border: Border;
+	padding: Padding;
+	cornerRadius: Radius;
+	layerRules?: LayerRules;
+	groupPath: GroupPath;
+	animationTrack?: AnimationTrack;
+	animationReference?: AnimationReference;
+	scaleX?: number;
+	scaleY?: number;
+	category?: CreativeElementCategory;
+};
