@@ -1,5 +1,6 @@
-import type { CanvasElementJSON } from '../types/canvas';
-import { THRESHOLD_FOR_NOT_SKEWING } from '../constants';
+import type { Border, CanvasElementJSON, Padding, Radius } from '../types/canvas';
+import { DEFAULT_BORDER_PROPERTIES, THRESHOLD_FOR_NOT_SKEWING } from '../constants';
+import { isAudioJSON, isCreativeBoxJSON, isGroupJSON } from './typeGuards';
 
 // ============================================================================
 // Numeric Property Accessors
@@ -75,4 +76,53 @@ export const checkIfElementShouldBeSkewed = ({
 		Math.floor(referenceLengths.top) <= 0 && Math.floor(referenceLengths.height) >= referenceLengths.canvasHeight;
 
 	return spansFullWidth || spansFullHeight;
+};
+
+// ============================================================================
+// Property Scaling Helpers
+// ============================================================================
+
+export const scaleCornerRadius = (cornerRadius: Radius | undefined, scalingRatio: number): Radius => {
+	return {
+		tl: (cornerRadius?.tl || 0) * scalingRatio,
+		tr: (cornerRadius?.tr || 0) * scalingRatio,
+		bl: (cornerRadius?.bl || 0) * scalingRatio,
+		br: (cornerRadius?.br || 0) * scalingRatio,
+	};
+};
+
+export const scalePadding = (padding: Padding | undefined, scalingRatio: number): Padding => {
+	const p = padding ?? { top: 0, right: 0, bottom: 0, left: 0 };
+	return {
+		...p,
+		top: p.top ? p.top * scalingRatio : 0,
+		right: p.right ? p.right * scalingRatio : 0,
+		bottom: p.bottom ? p.bottom * scalingRatio : 0,
+		left: p.left ? p.left * scalingRatio : 0,
+	};
+};
+
+export const getScaledBorderJSON = ({
+	object,
+	scalingRatio,
+}: {
+	object: CanvasElementJSON;
+	scalingRatio: number;
+}): { border?: Border } => {
+	if (isCreativeBoxJSON(object) || isGroupJSON(object) || isAudioJSON(object)) {
+		return {};
+	}
+	if (!('border' in object) || !object?.border) return {};
+
+	const border = object.border as Border;
+
+	if (!border.strokeWidth) return {};
+
+	return {
+		border: {
+			...DEFAULT_BORDER_PROPERTIES,
+			...border,
+			strokeWidth: border.strokeWidth * scalingRatio,
+		},
+	};
 };
