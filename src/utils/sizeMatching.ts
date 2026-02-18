@@ -196,3 +196,25 @@ export const findClosestSizeObjectsWithMatches = ({
 		matchPercentage: s.matchPercentage,
 	}));
 };
+
+/**
+ * Find the best reference size from available size objects.
+ * Returns the sizeId (key) of the best match.
+ */
+export const findBestReferenceSize = (availableSizes: Record<string, DatabaseSize>, targetSize: string): string => {
+	const sizeKeys = Object.keys(availableSizes);
+	if (sizeKeys.length === 1) {
+		return sizeKeys[0];
+	}
+	try {
+		const sortedMatches = findClosestSizeObjectsWithMatches({
+			availableSizes,
+			adaptSize: targetSize,
+		});
+
+		return sortedMatches[0]?._id || sizeKeys[0];
+	} catch (error) {
+		console.warn('Error finding closest size, using first available:', error);
+		return sizeKeys[0];
+	}
+};
