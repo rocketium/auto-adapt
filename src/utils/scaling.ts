@@ -1,6 +1,7 @@
 import type { AutoFitSizes, Border, CanvasElementJSON, Padding, Radius, WordStyle } from '../types/canvas';
 import { DEFAULT_BORDER_PROPERTIES, FALLBACK_AUTO_FIT_SIZES, THRESHOLD_FOR_NOT_SKEWING } from '../constants';
 import { isAudioJSON, isCreativeBoxJSON, isGroupJSON } from './typeGuards';
+import { getNormalizedSizeValue } from './sizeMatching';
 
 // ============================================================================
 // Numeric Property Accessors
@@ -172,4 +173,127 @@ export const scaleAutoFitSizes = (
 		return autoFitSizes.map((size) => Math.ceil((size ?? fallbackHeight) * scalingRatio)) as AutoFitSizes;
 	}
 	return [...FALLBACK_AUTO_FIT_SIZES] as AutoFitSizes;
+};
+
+// ============================================================================
+// Non-Skew Positioning
+// ============================================================================
+
+export const getValuesWithoutSkewingJSON = ({
+	closestSize,
+	adaptSize,
+	object,
+}: {
+	closestSize: string;
+	adaptSize: string;
+	object: CanvasElementJSON;
+}): { left: number; top: number; width: number; height: number } => {
+	const referenceSize = getNormalizedSizeValue(closestSize);
+	const [referenceWidth, referenceHeight] = referenceSize.split('x').map(Number);
+	const [adaptWidth, adaptHeight] = adaptSize.split('x').map(Number);
+
+	const top = num(object, 'top');
+	const left = num(object, 'left');
+	const scaleX = num(object, 'scaleX', 1);
+	const scaleY = num(object, 'scaleY', 1);
+	const width = num(object, 'width', 1) * scaleX;
+	const height = num(object, 'height', 1) * scaleY;
+
+	const widthScaleFactor = adaptWidth / referenceWidth;
+	const heightScaleFactor = adaptHeight / referenceHeight;
+	const scaleFactor = Math.min(widthScaleFactor, heightScaleFactor);
+	const elementWidthInNewSize = Math.ceil(width * scaleFactor);
+	const elementHeightInNewSize = Math.ceil(height * scaleFactor);
+
+	const distanceFromRight = Math.abs(left + width - referenceWidth);
+	const distanceFromBottom = Math.abs(top + height - referenceHeight);
+	const distanceFromLeft = Math.abs(left);
+	const distanceFromTop = Math.abs(top);
+
+	const ALIGNMENT_THRESHOLD = 1;
+
+	if (
+		distanceFromRight < ALIGNMENT_THRESHOLD ||
+		distanceFromLeft < ALIGNMENT_THRESHOLD ||
+		distanceFromBottom < ALIGNMENT_THRESHOLD ||
+		distanceFromTop < ALIGNMENT_THRESHOLD
+	) {
+		let elementLeftInNewSize: number;
+		let elementTopInNewSize: number;
+
+		if (distanceFromRight < ALIGNMENT_THRESHOLD) {
+			elementLeftInNewSize = adaptWidth - elementWidthInNewSize;
+		} else if (distanceFromLeft < ALIGNMENT_THRESHOLD) {
+			elementLeftInNewSize = 0;
+		} else {
+			const elementLeftPercentage = left / referenceWidth;
+			elementLeftInNewSize = Math.ceil(elementLeftPercentage * adaptWidth);
+		}
+
+		if (distanceFromBottom < ALIGNMENT_THRESHOLD) {
+			elementTopInNewSize = adaptHeight - elementHeightInNewSize;
+		} else if (distanceFromTop < ALIGNMENT_THRESHOLD) {
+			elementTopInNewSize = 0;
+		} else {
+			const elementTopPercentage = top / referenceHeight;
+			elementTopInNewSize = Math.ceil(elementTopPercentage * adaptHeight);
+		}
+
+		return {
+			left: elementLeftInNewSize,
+			top: elementTopInNewSize,
+			width: elementWidthInNewSize / scaleX,
+			height: elementHeightInNewSize / scaleY,
+		};
+	}
+
+	const elementCenterX = left + width / 2;
+	const elementCenterY = top + height / 2;
+	const elementRight = left + width;
+	const elementBottom = top + height;
+
+	const canvasCenterX = referenceWidth / 2;
+	const canvasCenterY = referenceHeight / 2;
+
+	const leftArea =
+		Math.max(0, Math.min(elementRight, canvasCenterX) - Math.max(left, 0)) *
+		Math.max(0, Math.min(elementBottom, referenceHeight) - Math.max(top, 0));
+	const rightArea =
+		Math.max(0, Math.min(elementRight, referenceWidth) - Math.max(left, canvasCenterX)) *
+		Math.max(0, Math.min(elementBottom, referenceHeight) - Math.max(top, 0));
+
+	const totalArea = leftArea + rightArea;
+	const CENTER_THRESHOLD = 0.05;
+
+	const isHorizontallyCentered = Math.abs(leftArea - rightArea) / totalArea < CENTER_THRESHOLD;
+
+	if (isHorizontallyCentered) {
+		const centerXPercentage = elementCenterX / referenceWidth;
+		const centerYPercentage = elementCenterY / referenceHeight;
+		const newCenterX = centerXPercentage * adaptWidth;
+		const newCenterY = centerYPercentage * adaptHeight;
+
+		return {
+			left: newCenterX - elementWidthInNewSize / 2,
+			top: newCenterY - elementHeightInNewSize / 2,
+			width: elementWidthInNewSize,
+			height: elementHeightInNewSize,
+		};
+	}
+
+	const isInRightHalf = elementCenterX > canvasCenterX;
+	const isInBottomHalf = elementCenterY > canvasCenterY;
+
+	const referenceX = isInRightHalf ? elementRight / referenceWidth : left / referenceWidth;
+	const referenceY = isInBottomHalf ? elementBottom / referenceHeight : top / referenceHeight;
+
+	const newX = referenceX * adaptWidth;
+	const newY = referenceY * adaptHeight;
+
+	return {
+		left: isInRightHalf ? newX - elementWidthInNewSize : newX,
+		top: isInBottomHalf ? newY - elementHeightInNewSize : newY,
+		width: elementWidthInNewSize,
+		height: elementHeightInNewSize,
+	};
 };
