@@ -1,4 +1,5 @@
 import { ASPECT_RATIO_WEIGHT, MAX_MATCH_PERCENTAGE, MIN_MATCH_PERCENTAGE, SCALE_DISTANCE_WEIGHT } from '../constants';
+import { DatabaseSize } from '../types/capsule';
 
 export const getNormalizedSizeValue = (sizeValue: string): string => {
 	switch (sizeValue) {
@@ -103,4 +104,95 @@ const computeSizeMatchScores = (sizes: SizeInput[], adaptSize: string): ScoredSi
 
 	scored.sort((a, b) => b.matchPercentage - a.matchPercentage);
 	return scored;
+};
+
+/**
+ * Finds the closest match among string-based sizes (e.g. ['720x720', '1080x1920']).
+ * Returns the single best match and all sorted match percentages.
+ */
+export const findClosestSizeWithMatches = ({
+	availableSizes,
+	adaptSize,
+}: {
+	availableSizes: string[];
+	adaptSize: string;
+}): { closestSize: string; sortedMatches: Record<string, number> } => {
+	const sizeInputs: SizeInput[] = availableSizes.map((s) => {
+		const normalized = getNormalizedSizeValue(s);
+		const [width, height] = normalized.split('x').map(Number);
+		return { key: s, width, height };
+	});
+
+	const scored = computeSizeMatchScores(sizeInputs, adaptSize);
+
+	// Determine closest by primary aspect-ratio distance, secondary euclidean distance
+	const [adaptWidth, adaptHeight] = getNormalizedSizeValue(adaptSize).split('x').map(Number);
+	const adaptRatio = adaptWidth / adaptHeight;
+
+	let closestSize = availableSizes[0];
+	let minAspectRatioDistance = Number.MAX_VALUE;
+	let minEuclideanDistance = Number.MAX_VALUE;
+
+	for (const input of sizeInputs) {
+		const ratio = input.width / input.height;
+		if (isNaN(ratio) || isNaN(adaptRatio)) continue;
+
+		const aspectRatioDistance = Math.abs(adaptRatio - ratio);
+		const euclideanDistance = getEuclideanDistanceBetweenPoints({
+			x1: adaptWidth,
+			y1: adaptHeight,
+			x2: input.width,
+			y2: input.height,
+		});
+
+		if (
+			aspectRatioDistance < minAspectRatioDistance ||
+			(aspectRatioDistance === minAspectRatioDistance && euclideanDistance < minEuclideanDistance)
+		) {
+			minAspectRatioDistance = aspectRatioDistance;
+			minEuclideanDistance = euclideanDistance;
+			closestSize = input.key;
+		}
+	}
+
+	return {
+		closestSize,
+		sortedMatches: scored.reduce(
+			(acc, { key, matchPercentage }) => {
+				acc[key] = matchPercentage;
+				return acc;
+			},
+			{} as Record<string, number>,
+		),
+	};
+};
+
+/**
+ * Finds closest matches among size objects (Record<sizeId, DatabaseSize>).
+ * Returns enriched size objects with _id and matchPercentage, sorted descending.
+ */
+export const findClosestSizeObjectsWithMatches = ({
+	availableSizes,
+	adaptSize,
+}: {
+	availableSizes: Record<string, DatabaseSize>;
+	adaptSize: string;
+}): (DatabaseSize & { _id: string; matchPercentage: number })[] => {
+	if (Object.keys(availableSizes).length === 0) {
+		return [];
+	}
+
+	const sizeInputs: SizeInput[] = Object.entries(availableSizes).map(([key, sizeObj]) => ({
+		key,
+		width: sizeObj.width,
+		height: sizeObj.height,
+	}));
+
+	const scored = computeSizeMatchScores(sizeInputs, adaptSize);
+
+	return scored.map((s) => ({
+		_id: s.key,
+		...availableSizes[s.key],
+		matchPercentage: s.matchPercentage,
+	}));
 };
