@@ -1,5 +1,5 @@
-import type { Border, CanvasElementJSON, Padding, Radius } from '../types/canvas';
-import { DEFAULT_BORDER_PROPERTIES, THRESHOLD_FOR_NOT_SKEWING } from '../constants';
+import type { AutoFitSizes, Border, CanvasElementJSON, Padding, Radius, WordStyle } from '../types/canvas';
+import { DEFAULT_BORDER_PROPERTIES, FALLBACK_AUTO_FIT_SIZES, THRESHOLD_FOR_NOT_SKEWING } from '../constants';
 import { isAudioJSON, isCreativeBoxJSON, isGroupJSON } from './typeGuards';
 
 // ============================================================================
@@ -125,4 +125,51 @@ export const getScaledBorderJSON = ({
 			strokeWidth: border.strokeWidth * scalingRatio,
 		},
 	};
+};
+
+export const adaptWordStyleFontSizes = ({
+	wordStyle,
+	scalingRatio,
+}: {
+	wordStyle: WordStyle[];
+	scalingRatio: number;
+}): WordStyle[] => {
+	if (!wordStyle || wordStyle.length === 0) {
+		return wordStyle;
+	}
+
+	return wordStyle.map((style) => {
+		if (!style.data?.styles?.fontSize) {
+			return style;
+		}
+
+		const currentFontSizeUnit = style.data.styles.fontSizeUnit ?? '%';
+		const adaptedFontSize =
+			currentFontSizeUnit === 'px'
+				? Math.round(style.data.styles.fontSize * scalingRatio)
+				: style.data.styles.fontSize;
+
+		return {
+			...style,
+			data: {
+				...style.data,
+				styles: {
+					...style.data.styles,
+					fontSize: adaptedFontSize,
+					fontSizeUnit: currentFontSizeUnit,
+				},
+			},
+		};
+	});
+};
+
+export const scaleAutoFitSizes = (
+	autoFitSizes: [number | null, number | null] | undefined,
+	scalingRatio: number,
+	fallbackHeight: number,
+): AutoFitSizes => {
+	if (autoFitSizes && autoFitSizes.length === 2) {
+		return autoFitSizes.map((size) => Math.ceil((size ?? fallbackHeight) * scalingRatio)) as AutoFitSizes;
+	}
+	return [...FALLBACK_AUTO_FIT_SIZES] as AutoFitSizes;
 };
