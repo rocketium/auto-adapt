@@ -1,4 +1,16 @@
-import type { AutoFitSizes, Border, CanvasElementJSON, Padding, Radius, WordStyle } from '../types/canvas';
+import type {
+	AutoFitSizes,
+	Border,
+	CanvasElementJSON,
+	ImageContainerJSON,
+	Padding,
+	PathJSON,
+	Radius,
+	RoundedRectJSON,
+	SvgJSON,
+	TextContainerJSON,
+	WordStyle,
+} from '../types/canvas';
 import { DEFAULT_BORDER_PROPERTIES, FALLBACK_AUTO_FIT_SIZES, THRESHOLD_FOR_NOT_SKEWING } from '../constants';
 import { isAudioJSON, isCreativeBoxJSON, isGroupJSON } from './typeGuards';
 import { getNormalizedSizeValue } from './sizeMatching';
@@ -296,4 +308,291 @@ export const getValuesWithoutSkewingJSON = ({
 		width: elementWidthInNewSize,
 		height: elementHeightInNewSize,
 	};
+};
+
+// ============================================================================
+// Per-Type Adapt Helpers (Non-Skew Path)
+// ============================================================================
+
+export const adaptTextNoSkew = (
+	object: TextContainerJSON,
+	values: { left: number; top: number; width: number; height: number },
+	scalingRatio: number,
+	closestHeight: number,
+): TextContainerJSON => {
+	return {
+		...object,
+		left: values.left,
+		top: values.top,
+		width: values.width,
+		height: values.height,
+		wordSpacing: object.wordSpacing ? object.wordSpacing * scalingRatio : 0,
+		padding: scalePadding(object.padding, scalingRatio),
+		cornerRadius: scaleCornerRadius(object.cornerRadius, scalingRatio),
+		...getScaledBorderJSON({ object, scalingRatio }),
+		autoFitSizes: scaleAutoFitSizes(object.autoFitSizes, scalingRatio, closestHeight),
+		fontSize: object.fontSize * scalingRatio,
+		wordStyle: adaptWordStyleFontSizes({ wordStyle: object.wordStyle || [], scalingRatio }),
+	};
+};
+
+export const adaptImageNoSkew = (
+	object: ImageContainerJSON,
+	values: { left: number; top: number; width: number; height: number },
+	scalingRatio: number,
+	widthRatio: number,
+	heightRatio: number,
+): ImageContainerJSON => {
+	return {
+		...object,
+		left: values.left,
+		top: values.top,
+		width: values.width,
+		height: values.height,
+		imageScale: (object.imageScale ?? 1) * scalingRatio,
+		imageLeft: (object.imageLeft ?? 0) * widthRatio,
+		imageTop: (object.imageTop ?? 0) * heightRatio,
+		cornerRadius: scaleCornerRadius(object.cornerRadius, scalingRatio),
+		...getScaledBorderJSON({ object, scalingRatio }),
+	};
+};
+
+export const adaptSvgNoSkew = (
+	object: SvgJSON,
+	values: { left: number; top: number; width: number; height: number },
+	scalingRatio: number,
+	widthRatio: number,
+	heightRatio: number,
+): SvgJSON => {
+	return {
+		...object,
+		left: values.left,
+		top: values.top,
+		width: values.width,
+		height: values.height,
+		imageScale: (object.imageScale ?? 1) * scalingRatio,
+		imageLeft: (object.imageLeft ?? 0) * widthRatio,
+		imageTop: (object.imageTop ?? 0) * heightRatio,
+		...getScaledBorderJSON({ object, scalingRatio }),
+	} as SvgJSON;
+};
+
+export const adaptRoundedRectNoSkew = (
+	object: RoundedRectJSON,
+	values: { left: number; top: number; width: number; height: number },
+	scalingRatio: number,
+): RoundedRectJSON => {
+	return {
+		...object,
+		left: values.left,
+		top: values.top,
+		width: values.width,
+		height: values.height,
+		cornerRadius: scaleCornerRadius(object.cornerRadius, scalingRatio),
+		...getScaledBorderJSON({ object, scalingRatio }),
+	};
+};
+
+export const adaptShapeNoSkew = (
+	object: PathJSON | RoundedRectJSON | SvgJSON,
+	values: { left: number; top: number; width: number; height: number },
+	scalingRatio: number,
+): CanvasElementJSON => {
+	return {
+		...object,
+		left: values.left,
+		top: values.top,
+		scaleX: (object.scaleX ?? 1) * scalingRatio,
+		scaleY: (object.scaleY ?? 1) * scalingRatio,
+		...getScaledBorderJSON({ object, scalingRatio }),
+	} as CanvasElementJSON;
+};
+
+// ============================================================================
+// Per-Type Adapt Helpers (Skew Path)
+// ============================================================================
+
+export const adaptTextSkew = (
+	object: TextContainerJSON,
+	widthRatio: number,
+	heightRatio: number,
+	scalingRatio: number,
+	closestHeight: number,
+): TextContainerJSON => {
+	return {
+		...object,
+		left: object.left * widthRatio,
+		top: object.top * heightRatio,
+		width: object.width * widthRatio,
+		height: object.height * heightRatio,
+		autoFitSizes: scaleAutoFitSizes(object.autoFitSizes, scalingRatio, closestHeight),
+		cornerRadius: scaleCornerRadius(object.cornerRadius, scalingRatio),
+		fontSize: object.fontSize * scalingRatio,
+		wordStyle: adaptWordStyleFontSizes({ wordStyle: object.wordStyle || [], scalingRatio }),
+	};
+};
+
+export const adaptImageSkew = (
+	object: ImageContainerJSON,
+	widthRatio: number,
+	heightRatio: number,
+	scalingRatio: number,
+): ImageContainerJSON => {
+	return {
+		...object,
+		left: object.left * widthRatio,
+		top: object.top * heightRatio,
+		width: object.width * widthRatio,
+		height: object.height * heightRatio,
+		imageScale: (object.imageScale ?? 1) * scalingRatio,
+		imageLeft: (object.imageLeft ?? 0) * widthRatio,
+		imageTop: (object.imageTop ?? 0) * heightRatio,
+		cornerRadius: scaleCornerRadius(object.cornerRadius, scalingRatio),
+	};
+};
+
+export const adaptSvgSkew = (
+	object: SvgJSON,
+	widthRatio: number,
+	heightRatio: number,
+	scalingRatio: number,
+): SvgJSON => {
+	return {
+		...object,
+		left: object.left * widthRatio,
+		top: object.top * heightRatio,
+		width: object.width * widthRatio,
+		height: object.height * heightRatio,
+		imageScale: (object.imageScale ?? 1) * scalingRatio,
+		imageLeft: (object.imageLeft ?? 0) * widthRatio,
+		imageTop: (object.imageTop ?? 0) * heightRatio,
+		...getScaledBorderJSON({ object, scalingRatio }),
+	} as SvgJSON;
+};
+
+export const adaptRoundedRectSkew = (
+	object: RoundedRectJSON,
+	widthRatio: number,
+	heightRatio: number,
+	scalingRatio: number,
+): RoundedRectJSON => {
+	return {
+		...object,
+		left: object.left * widthRatio,
+		top: object.top * heightRatio,
+		width: object.width * widthRatio,
+		height: object.height * heightRatio,
+		cornerRadius: scaleCornerRadius(object.cornerRadius, scalingRatio),
+		...getScaledBorderJSON({ object, scalingRatio }),
+	};
+};
+
+export const adaptShapeSkew = (
+	object: PathJSON | RoundedRectJSON | SvgJSON,
+	widthRatio: number,
+	heightRatio: number,
+	scalingRatio: number,
+): CanvasElementJSON => {
+	return {
+		...object,
+		left: object.left * widthRatio,
+		top: object.top * heightRatio,
+		scaleX: (object.scaleX ?? 1) * widthRatio,
+		scaleY: (object.scaleY ?? 1) * heightRatio,
+		...getScaledBorderJSON({ object, scalingRatio }),
+	} as CanvasElementJSON;
+};
+
+// ============================================================================
+// Group Child Adapt Helpers
+// ============================================================================
+
+export const adaptGroupChildText = (
+	groupObject: TextContainerJSON,
+	scalingRatio: number,
+	closestHeight: number,
+	parentObject: CanvasElementJSON,
+): TextContainerJSON => {
+	return {
+		...groupObject,
+		left: groupObject.left * scalingRatio,
+		top: groupObject.top * scalingRatio,
+		width: groupObject.width * scalingRatio,
+		height: groupObject.height * scalingRatio,
+		wordSpacing: groupObject.wordSpacing ? groupObject.wordSpacing * scalingRatio : 0,
+		padding: scalePadding(groupObject.padding, scalingRatio),
+		cornerRadius: scaleCornerRadius(groupObject.cornerRadius, scalingRatio),
+		...getScaledBorderJSON({ object: parentObject, scalingRatio }),
+		autoFitSizes: scaleAutoFitSizes(groupObject.autoFitSizes, scalingRatio, closestHeight),
+		fontSize: groupObject.fontSize * scalingRatio,
+		wordStyle: adaptWordStyleFontSizes({ wordStyle: groupObject.wordStyle || [], scalingRatio }),
+	};
+};
+
+export const adaptGroupChildImage = (
+	groupObject: ImageContainerJSON,
+	scalingRatio: number,
+	parentObject: CanvasElementJSON,
+): ImageContainerJSON => {
+	return {
+		...groupObject,
+		left: groupObject.left * scalingRatio,
+		top: groupObject.top * scalingRatio,
+		width: groupObject.width * scalingRatio,
+		height: groupObject.height * scalingRatio,
+		imageScale: (groupObject.imageScale ?? 1) * scalingRatio,
+		imageLeft: (groupObject.imageLeft ?? 0) * scalingRatio,
+		imageTop: (groupObject.imageTop ?? 0) * scalingRatio,
+		cornerRadius: scaleCornerRadius(groupObject.cornerRadius, scalingRatio),
+		...getScaledBorderJSON({ object: parentObject, scalingRatio }),
+	};
+};
+
+export const adaptGroupChildSvg = (
+	svgContainer: SvgJSON,
+	scalingRatio: number,
+	parentObject: CanvasElementJSON,
+): SvgJSON => {
+	return {
+		...svgContainer,
+		left: svgContainer.left * scalingRatio,
+		top: svgContainer.top * scalingRatio,
+		width: svgContainer.width * scalingRatio,
+		height: svgContainer.height * scalingRatio,
+		imageScale: (svgContainer.imageScale ?? 1) * scalingRatio,
+		imageLeft: (svgContainer.imageLeft ?? 0) * scalingRatio,
+		imageTop: (svgContainer.imageTop ?? 0) * scalingRatio,
+		...getScaledBorderJSON({ object: parentObject, scalingRatio }),
+	} as SvgJSON;
+};
+
+export const adaptGroupChildRoundedRect = (
+	roundedRectObject: RoundedRectJSON,
+	scalingRatio: number,
+	parentObject: CanvasElementJSON,
+): RoundedRectJSON => {
+	return {
+		...roundedRectObject,
+		left: roundedRectObject.left * scalingRatio,
+		top: roundedRectObject.top * scalingRatio,
+		width: roundedRectObject.width * scalingRatio,
+		height: roundedRectObject.height * scalingRatio,
+		cornerRadius: scaleCornerRadius(roundedRectObject.cornerRadius, scalingRatio),
+		...getScaledBorderJSON({ object: parentObject, scalingRatio }),
+	};
+};
+
+export const adaptGroupChildShape = (
+	groupObject: CanvasElementJSON,
+	scalingRatio: number,
+	parentObject: CanvasElementJSON,
+): CanvasElementJSON => {
+	return {
+		...groupObject,
+		left: num(groupObject, 'left') * scalingRatio,
+		top: num(groupObject, 'top') * scalingRatio,
+		scaleX: num(groupObject, 'scaleX', 1) * scalingRatio,
+		scaleY: num(groupObject, 'scaleY', 1) * scalingRatio,
+		...getScaledBorderJSON({ object: parentObject, scalingRatio }),
+	} as CanvasElementJSON;
 };
