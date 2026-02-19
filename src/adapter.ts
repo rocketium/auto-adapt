@@ -261,3 +261,75 @@ export const applyAdaptedAsOverrides = (
 
 	return result;
 };
+
+// ============================================================================
+// Capsule Construction
+// ============================================================================
+
+/**
+ * Builds a new ServerCapsule with an added size. Handles canvasData.variant.sizes,
+ * savedCustomDimensions, newAddedSizes, and creativesOrder.
+ */
+export const buildNewCapsule = ({
+	originalCapsule,
+	updatedObjects,
+	sizeId,
+	referenceCreativeId,
+	sizeToGenerate,
+	sizeName,
+	sizeCategory,
+	videoLength,
+}: {
+	originalCapsule: ServerCapsule;
+	updatedObjects: Record<string, CanvasElementWithOverrides<CanvasElementJSON>>;
+	sizeId: string;
+	referenceCreativeId: string;
+	sizeToGenerate: string;
+	sizeName?: string;
+	sizeCategory?: string;
+	videoLength?: number;
+}): ServerCapsule => {
+	const [widthOfNewSize, heightOfNewSize] = sizeToGenerate.split('x').map(Number);
+
+	const canvasData = JSON.parse(JSON.stringify(originalCapsule.canvasData));
+	canvasData.variant.objects = updatedObjects;
+
+	canvasData.variant.sizes[sizeId] = {
+		width: widthOfNewSize,
+		height: heightOfNewSize,
+		id: sizeId,
+		displayName: sizeName || sizeToGenerate,
+		rulers: [],
+		...(videoLength !== undefined && { videoLength }),
+	};
+
+	const creativesOrder = originalCapsule.creativesOrder;
+	const finalCreativesOrder =
+		creativesOrder && creativesOrder.length > 0
+			? [...creativesOrder, sizeId]
+			: [referenceCreativeId, sizeId];
+
+	const newSizeData = {
+		name: sizeName || sizeToGenerate,
+		width: widthOfNewSize,
+		height: heightOfNewSize,
+		active: true,
+		thumbnail: '',
+		creativeUrl: '',
+		...(sizeCategory && { category: sizeCategory }),
+	};
+
+	return {
+		...originalCapsule,
+		canvasData,
+		savedCustomDimensions: {
+			...originalCapsule.savedCustomDimensions,
+			[sizeId]: newSizeData,
+		},
+		newAddedSizes: {
+			...originalCapsule.newAddedSizes,
+			[sizeId]: newSizeData,
+		},
+		creativesOrder: finalCreativesOrder,
+	};
+};
