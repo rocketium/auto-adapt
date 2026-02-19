@@ -1,5 +1,6 @@
 import type { CanvasElementJSON, CanvasElementWithOverrides } from './types/canvas';
 import type { ServerCapsule } from './types/capsule';
+import { findBestReferenceSize } from './utils/sizeMatching';
 import {
 	isTextJSON,
 	isImageJSON,
@@ -332,4 +333,81 @@ export const buildNewCapsule = ({
 		},
 		creativesOrder: finalCreativesOrder,
 	};
+};
+
+// ============================================================================
+// Top-Level Entry Function
+// ============================================================================
+
+/**
+ * Generate a base layout for a new size.
+ *
+ * Takes the original capsule and target size params, returns a new ServerCapsule
+ * with the adapted layout. Follows the frontend's getAdaptedObjectsJSON logic exactly.
+ */
+export const generateBaseLayoutForSize = ({
+	originalCapsule,
+	capsuleId,
+	creativeId,
+	sizeId,
+	sizeToGenerate,
+	sizeName,
+	sizeCategory,
+}: {
+	originalCapsule: ServerCapsule;
+	capsuleId: string;
+	creativeId: string | null;
+	sizeId: string;
+	sizeToGenerate: string;
+	sizeName?: string;
+	sizeCategory?: string;
+}): ServerCapsule => {
+	const availableSizes = originalCapsule.canvasData.variant?.sizes;
+
+	if (!availableSizes || Object.keys(availableSizes).length === 0) {
+		throw new Error(`No sizes available in capsule: ${capsuleId}`);
+	}
+
+	let referenceCreativeId: string;
+
+	if (creativeId && availableSizes[creativeId]) {
+		referenceCreativeId = creativeId;
+		console.log(`[BaseLayoutAdapter] Using provided reference size: ${referenceCreativeId}`);
+	} else {
+		referenceCreativeId = findBestReferenceSize(availableSizes, sizeToGenerate);
+		console.log(
+			`[BaseLayoutAdapter] Found best reference size: ${referenceCreativeId} for target: ${sizeToGenerate}`,
+		);
+
+		if (creativeId && !availableSizes[creativeId]) {
+			console.warn(
+				`[BaseLayoutAdapter] Provided creativeId ${creativeId} not found, using ${referenceCreativeId}`,
+			);
+		}
+	}
+
+	const currentSize = availableSizes[referenceCreativeId];
+	const closestSize = `${currentSize.width}x${currentSize.height}`;
+	const variantObjects = originalCapsule.canvasData.variant.objects;
+
+	const resolvedObjects = resolveObjectsForSize(variantObjects, referenceCreativeId);
+
+	const adaptedObjects = getAdaptedObjectsJSON({
+		adaptSize: sizeToGenerate,
+		objects: resolvedObjects,
+		closestSize,
+	});
+
+	const updatedObjects = applyAdaptedAsOverrides(variantObjects, adaptedObjects, sizeId);
+
+	return buildNewCapsule({
+		originalCapsule,
+		updatedObjects,
+		sizeId,
+		referenceCreativeId,
+		sizeToGenerate,
+		sizeName,
+		sizeCategory,
+		videoLength: currentSize?.videoLength,
+	});
 };
