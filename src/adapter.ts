@@ -231,3 +231,33 @@ export const resolveObjectsForSize = (
 	}
 	return resolved;
 };
+
+/**
+ * Convert adapted flat objects back to overrides on the original objects.
+ * For each layer, the adapted result is stored as overrides[newSizeId].
+ */
+export const applyAdaptedAsOverrides = (
+	originalObjects: Record<string, CanvasElementWithOverrides<CanvasElementJSON>>,
+	adaptedObjects: Record<string, CanvasElementJSON>,
+	newSizeId: string,
+): Record<string, CanvasElementWithOverrides<CanvasElementJSON>> => {
+	const result = JSON.parse(JSON.stringify(originalObjects)) as Record<
+		string,
+		CanvasElementWithOverrides<CanvasElementJSON>
+	>;
+
+	for (const [layerId, adapted] of Object.entries(adaptedObjects)) {
+		if (!result[layerId]) continue;
+
+		const existingOverrides = result[layerId].overrides || {};
+		result[layerId].overrides = {
+			...existingOverrides,
+			[newSizeId]: {
+				...adapted,
+				zIndex: result[layerId].overrides?.[newSizeId]?.zIndex ?? result[layerId].zIndex ?? 0,
+			} as Partial<CanvasElementJSON> & { zIndex: number },
+		};
+	}
+
+	return result;
+};
