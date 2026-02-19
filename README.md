@@ -213,6 +213,25 @@ npm run format
 
 For local linking: `npm install ../auto-adapt` from a consumer project.
 
+## Publishing
+
+Publishing uses the Rocketium org account. Personal `~/.npmrc` is left unchanged.
+
+1. Create `.npmrc` in the project root (gitignored). Use this structure:
+
+   ```
+   //registry.npmjs.org/:_authToken=REPLACE_WITH_ROCKETIUM_NPM_TOKEN
+   ```
+
+2. Replace `REPLACE_WITH_ROCKETIUM_NPM_TOKEN` with the actual token (or `${NPM_TOKEN}` for env-based auth).
+
+3. Publish:
+
+   ```bash
+   npm run release:patch/minor/major
+   ```
+   as per the requirement
+
 ## License
 
 MIT

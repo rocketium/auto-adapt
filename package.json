@@ -14,13 +14,21 @@
 	},
 	"files": ["dist"],
 	"sideEffects": false,
+	"publishConfig": {
+		"access": "public"
+	},
 	"scripts": {
 		"build": "tsup",
 		"lint": "eslint src/",
 		"format": "prettier --write src/",
 		"format:check": "prettier --check src/",
 		"typecheck": "tsc --noEmit",
-		"prepublishOnly": "npm run build"
+		"prepublishOnly": "npm run build",
+		"publish:org": "npm publish --access public",
+		"postpublish": "git push origin HEAD --tags",
+		"release:patch": "npm version patch && npm publish",
+		"release:minor": "npm version minor && npm publish",
+		"release:major": "npm version major && npm publish"
 	},
 	"peerDependencies": {
 		"@types/fabric": "^5.3.9"
