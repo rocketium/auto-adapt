@@ -210,3 +210,24 @@ export const getAdaptedObjectsJSON = ({
 
 	return newObjects;
 };
+
+// ============================================================================
+// Overrides Resolution
+// ============================================================================
+
+/**
+ * Resolve CanvasElementWithOverrides to flat CanvasElementJSON for a given sizeId.
+ * Applies overrides[sizeId] onto the base object.
+ */
+export const resolveObjectsForSize = (
+	objects: Record<string, CanvasElementWithOverrides<CanvasElementJSON>>,
+	sizeId: string,
+): Record<string, CanvasElementJSON> => {
+	const resolved: Record<string, CanvasElementJSON> = {};
+	for (const [id, obj] of Object.entries(objects)) {
+		const sizeOverrides = obj.overrides?.[sizeId] || {};
+		const { overrides: _overrides, zIndex: _zIndex, ...base } = obj as Record<string, unknown>;
+		resolved[id] = { ...base, ...sizeOverrides } as CanvasElementJSON;
+	}
+	return resolved;
+};
