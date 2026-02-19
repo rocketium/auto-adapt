@@ -1,8 +1,34 @@
 import type { CanvasElementJSON, CanvasElementWithOverrides } from './types/canvas';
 import type { ServerCapsule } from './types/capsule';
 import {
+	isTextJSON,
+	isImageJSON,
+	isShapeJSON,
+	isSVGContainerJSON,
+	isRoundedRectJSON,
+	isGroupJSON,
+} from './utils/typeGuards';
+import {
+	num,
 	getAreaPercentageOfElementOnCanvasJSON,
 	checkIfElementShouldBeSkewed,
+	getValuesWithoutSkewingJSON,
+	getScaledBorderJSON,
+	adaptTextNoSkew,
+	adaptImageNoSkew,
+	adaptSvgNoSkew,
+	adaptRoundedRectNoSkew,
+	adaptShapeNoSkew,
+	adaptTextSkew,
+	adaptImageSkew,
+	adaptSvgSkew,
+	adaptRoundedRectSkew,
+	adaptShapeSkew,
+	adaptGroupChildText,
+	adaptGroupChildImage,
+	adaptGroupChildSvg,
+	adaptGroupChildRoundedRect,
+	adaptGroupChildShape,
 } from './utils/scaling';
 
 // ============================================================================
@@ -20,6 +46,10 @@ export const getAdaptedObjectsJSON = ({
 }): Record<string, CanvasElementJSON> => {
 	const [adaptWidth, adaptHeight] = adaptSize.split('x').map(Number);
 	const [closestWidth, closestHeight] = closestSize.split('x').map(Number);
+
+	const widthRatio = adaptWidth / closestWidth;
+	const heightRatio = adaptHeight / closestHeight;
+	const scalingRatio = Math.min(widthRatio, heightRatio);
 
 	const newObjects: Record<string, CanvasElementJSON> = {};
 
@@ -49,7 +79,7 @@ export const getAdaptedObjectsJSON = ({
 			canvasDimensions: { width: closestWidth, height: closestHeight },
 		});
 
-		checkIfElementShouldBeSkewed({
+		const shouldSkew = checkIfElementShouldBeSkewed({
 			areaPercentage,
 			referenceLengths: {
 				left: object.left ?? 0,
@@ -62,7 +92,120 @@ export const getAdaptedObjectsJSON = ({
 			type: object.dataType,
 		});
 
-		newObjects[objectId] = object;
+		// ---- NON-SKEW PATH ----
+		if (!shouldSkew) {
+			const values = getValuesWithoutSkewingJSON({ closestSize, adaptSize, object });
+
+			if (values.left === 0 && values.height === 0 && values.top === 0 && values.width === 0) {
+				throw new Error('Invalid values');
+			}
+
+			if ('groupPath' in object && object.groupPath) {
+				continue;
+			}
+
+			if (isTextJSON(object)) {
+				newObjects[objectId] = adaptTextNoSkew(object, values, scalingRatio, closestHeight);
+				continue;
+			}
+
+			if (isImageJSON(object)) {
+				newObjects[objectId] = adaptImageNoSkew(object, values, scalingRatio, widthRatio, heightRatio);
+				continue;
+			}
+
+			if (isShapeJSON(object)) {
+				if (isSVGContainerJSON(object)) {
+					newObjects[objectId] = adaptSvgNoSkew(object, values, scalingRatio, widthRatio, heightRatio);
+					continue;
+				}
+				if (isRoundedRectJSON(object)) {
+					newObjects[objectId] = adaptRoundedRectNoSkew(object, values, scalingRatio);
+					continue;
+				}
+				newObjects[objectId] = adaptShapeNoSkew(object, values, scalingRatio);
+				continue;
+			}
+
+			if (isGroupJSON(object)) {
+				newObjects[objectId] = {
+					...object,
+					left: values.left,
+					top: values.top,
+					width: values.width,
+					height: values.height,
+				};
+
+				for (const groupObjectId of object.objects) {
+					const groupObject = objects[groupObjectId];
+					if (!groupObject) continue;
+
+					if (isTextJSON(groupObject)) {
+						newObjects[groupObjectId] = adaptGroupChildText(
+							groupObject,
+							scalingRatio,
+							closestHeight,
+							object,
+						);
+						continue;
+					}
+					if (isImageJSON(groupObject)) {
+						newObjects[groupObjectId] = adaptGroupChildImage(groupObject, scalingRatio, object);
+						continue;
+					}
+					if (isShapeJSON(groupObject)) {
+						if (isSVGContainerJSON(groupObject)) {
+							newObjects[groupObjectId] = adaptGroupChildSvg(groupObject, scalingRatio, object);
+							continue;
+						}
+						if (isRoundedRectJSON(groupObject)) {
+							newObjects[groupObjectId] = adaptGroupChildRoundedRect(
+								groupObject,
+								scalingRatio,
+								object,
+							);
+							continue;
+						}
+						newObjects[groupObjectId] = adaptGroupChildShape(groupObject, scalingRatio, object);
+						continue;
+					}
+				}
+				continue;
+			}
+		}
+
+		// ---- SKEW PATH ----
+		if (isTextJSON(object)) {
+			newObjects[objectId] = adaptTextSkew(object, widthRatio, heightRatio, scalingRatio, closestHeight);
+			continue;
+		}
+
+		if (isImageJSON(object)) {
+			newObjects[objectId] = adaptImageSkew(object, widthRatio, heightRatio, scalingRatio);
+			continue;
+		}
+
+		if (isShapeJSON(object)) {
+			if (isSVGContainerJSON(object)) {
+				newObjects[objectId] = adaptSvgSkew(object, widthRatio, heightRatio, scalingRatio);
+				continue;
+			}
+			if (isRoundedRectJSON(object)) {
+				newObjects[objectId] = adaptRoundedRectSkew(object, widthRatio, heightRatio, scalingRatio);
+				continue;
+			}
+			newObjects[objectId] = adaptShapeSkew(object, widthRatio, heightRatio, scalingRatio);
+			continue;
+		}
+
+		newObjects[objectId] = {
+			...object,
+			left: num(object, 'left') * widthRatio,
+			top: num(object, 'top') * heightRatio,
+			width: num(object, 'width', 1) * widthRatio,
+			height: num(object, 'height', 1) * heightRatio,
+			...getScaledBorderJSON({ object, scalingRatio }),
+		} as CanvasElementJSON;
 	}
 
 	return newObjects;
