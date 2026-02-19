@@ -1,0 +1,35 @@
+export {
+	generateBaseLayoutForSize,
+	buildNewCapsule,
+	getAdaptedObjectsJSON,
+	resolveObjectsForSize,
+	applyAdaptedAsOverrides,
+} from './adapter';
+export {
+	findClosestSizeWithMatches,
+	findClosestSizeObjectsWithMatches,
+	findBestReferenceSize,
+	getNormalizedSizeValue,
+	getEuclideanDistanceBetweenSizes,
+} from './utils/sizeMatching';
+export {
+	getValuesWithoutSkewingJSON,
+	getAreaPercentageOfElementOnCanvasJSON,
+	checkIfElementShouldBeSkewed,
+	getScaledBorderJSON,
+	adaptWordStyleFontSizes,
+	scaleCornerRadius,
+	scalePadding,
+	scaleAutoFitSizes,
+} from './utils/scaling';
+export {
+	isTextJSON,
+	isImageJSON,
+	isShapeJSON,
+	isSVGContainerJSON,
+	isRoundedRectJSON,
+	isGroupJSON,
+	isCreativeBoxJSON,
+	isAudioJSON,
+} from './utils/typeGuards';
+export * from './types';
