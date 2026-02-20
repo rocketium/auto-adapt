@@ -1,8 +1,11 @@
 import type { AutoFitSizes } from './types/canvas';
 
 export const FALLBACK_AUTO_FIT_SIZES: AutoFitSizes = [1, Infinity];
+/** Element covering more than this % of canvas uses skew path */
 export const THRESHOLD_FOR_NOT_SKEWING = 90;
+/** Weight for aspect-ratio similarity in size matching (90%) */
 export const ASPECT_RATIO_WEIGHT = 0.9;
+/** Weight for euclidean distance in size matching (10%) */
 export const SCALE_DISTANCE_WEIGHT = 0.1;
 export const MIN_MATCH_PERCENTAGE = 20;
 export const MAX_MATCH_PERCENTAGE = 100;
