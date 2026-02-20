@@ -199,6 +199,7 @@ export const findClosestSizeObjectsWithMatches = ({
 
 /**
  * Find the best reference size from available size objects.
+ * Uses weighted scoring: 90% aspect-ratio similarity, 10% euclidean distance.
  * Returns the sizeId (key) of the best match.
  */
 export const findBestReferenceSize = (availableSizes: Record<string, DatabaseSize>, targetSize: string): string => {
