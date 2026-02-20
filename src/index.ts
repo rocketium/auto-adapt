@@ -1,3 +1,6 @@
+/**
+ * @rocketium/auto-adapt - Layout adaptation engine for canvas elements across dimensions
+ */
 export {
 	generateBaseLayoutForSize,
 	buildNewCapsule,
