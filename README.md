@@ -211,6 +211,8 @@ npm run lint
 npm run format
 ```
 
+For local linking: `npm install ../auto-adapt` from a consumer project.
+
 ## License
 
 MIT
