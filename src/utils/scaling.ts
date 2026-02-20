@@ -188,7 +188,7 @@ export const scaleAutoFitSizes = (
 };
 
 // ============================================================================
-// Non-Skew Positioning
+// Non-Skew Positioning (edge alignment, centering, quadrant-based)
 // ============================================================================
 
 export const getValuesWithoutSkewingJSON = ({
