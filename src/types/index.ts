@@ -64,5 +64,7 @@ export type {
 	SavedCustomDimensions,
 	OutputFormat,
 	RulerLine,
+	RULER_AXIS_TYPE,
 	GridOption,
 } from './capsule';
+export { RULER_AXIS } from './capsule';
