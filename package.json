@@ -48,5 +48,8 @@
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/rocketium/auto-adapt"
+	},
+	"bugs": {
+		"url": "https://github.com/rocketium/auto-adapt/issues"
 	}
 }
