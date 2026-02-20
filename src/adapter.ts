@@ -34,6 +34,7 @@ import {
 
 // ============================================================================
 // Core Adapt Function (ported from frontend getAdaptedObjectsJSON)
+// Adapts canvas elements from reference size to target size with skew/non-skew paths
 // ============================================================================
 
 export const getAdaptedObjectsJSON = ({
