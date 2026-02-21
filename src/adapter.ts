@@ -4,10 +4,13 @@ import { findBestReferenceSize } from './utils/sizeMatching';
 import {
 	isTextJSON,
 	isImageJSON,
+	isVideoJSON,
 	isShapeJSON,
 	isSVGContainerJSON,
 	isRoundedRectJSON,
 	isGroupJSON,
+	isCreativeBoxJSON,
+	isAudioJSON,
 } from './utils/typeGuards';
 import {
 	num,
@@ -147,28 +150,26 @@ export const getAdaptedObjectsJSON = ({
 							groupObject,
 							scalingRatio,
 							closestHeight,
-							object,
 						);
 						continue;
 					}
 					if (isImageJSON(groupObject)) {
-						newObjects[groupObjectId] = adaptGroupChildImage(groupObject, scalingRatio, object);
+						newObjects[groupObjectId] = adaptGroupChildImage(groupObject, scalingRatio);
 						continue;
 					}
 					if (isShapeJSON(groupObject)) {
 						if (isSVGContainerJSON(groupObject)) {
-							newObjects[groupObjectId] = adaptGroupChildSvg(groupObject, scalingRatio, object);
+							newObjects[groupObjectId] = adaptGroupChildSvg(groupObject, scalingRatio);
 							continue;
 						}
 						if (isRoundedRectJSON(groupObject)) {
 							newObjects[groupObjectId] = adaptGroupChildRoundedRect(
 								groupObject,
 								scalingRatio,
-								object,
 							);
 							continue;
 						}
-						newObjects[groupObjectId] = adaptGroupChildShape(groupObject, scalingRatio, object);
+						newObjects[groupObjectId] = adaptGroupChildShape(groupObject, scalingRatio);
 						continue;
 					}
 				}
@@ -262,6 +263,104 @@ export const applyAdaptedAsOverrides = (
 	}
 
 	return result;
+};
+
+// ============================================================================
+// Layout-Only Merge (for vector similarity flow)
+// ============================================================================
+
+const LAYOUT_KEYS_COMMON = ['left', 'top', 'width', 'height', 'angle', 'visible'] as const;
+const LAYOUT_KEYS_TEXT_EXTRA = ['fontSize', 'autoFitSizes', 'padding', 'wordSpacing'] as const;
+const LAYOUT_KEYS_IMAGE_VIDEO_EXTRA = ['imageScale', 'imageLeft', 'imageTop', 'objectFit', 'imageOriginX', 'imageOriginY'] as const;
+const LAYOUT_KEYS_SVG_EXTRA = ['imageScale', 'imageLeft', 'imageTop', 'scaleX', 'scaleY', 'objectFit', 'imageOriginX', 'imageOriginY'] as const;
+const LAYOUT_KEYS_PATH = ['left', 'top', 'angle', 'visible', 'scaleX', 'scaleY'] as const;
+
+/**
+ * Get the list of layout/positioning property keys for a given element type.
+ * These are the only properties that should be taken from a reference layout
+ * (e.g. output capsule from vector search) while preserving all styling/branding
+ * from the base object.
+ */
+const getLayoutKeysForElement = (element: CanvasElementJSON): readonly string[] => {
+	if (isCreativeBoxJSON(element) || isAudioJSON(element)) {
+		return [];
+	}
+	if (isTextJSON(element)) {
+		return [...LAYOUT_KEYS_COMMON, ...LAYOUT_KEYS_TEXT_EXTRA];
+	}
+	if (isImageJSON(element) || isVideoJSON(element)) {
+		return [...LAYOUT_KEYS_COMMON, ...LAYOUT_KEYS_IMAGE_VIDEO_EXTRA];
+	}
+	if (isShapeJSON(element)) {
+		if (isSVGContainerJSON(element)) {
+			return [...LAYOUT_KEYS_COMMON, ...LAYOUT_KEYS_SVG_EXTRA];
+		}
+		if (isRoundedRectJSON(element)) {
+			return LAYOUT_KEYS_COMMON;
+		}
+		return LAYOUT_KEYS_PATH;
+	}
+	if (isGroupJSON(element)) {
+		return LAYOUT_KEYS_COMMON;
+	}
+	return LAYOUT_KEYS_COMMON;
+};
+
+/**
+ * Merge only layout/positioning properties from a reference object onto a base object.
+ *
+ * Used in the vector similarity flow: the base object comes from base-layout-adapt
+ * of the INPUT capsule (preserving all styling, branding, content), while the
+ * reference provides the spatial arrangement from the OUTPUT capsule.
+ *
+ * Properties transferred per type:
+ * - All:         left, top, width, height, angle, visible
+ * - Text:        + fontSize, autoFitSizes, padding, wordSpacing
+ * - Image/Video: + imageScale, imageLeft, imageTop
+ * - SVG:         + imageScale, imageLeft, imageTop, scaleX, scaleY
+ * - Path:        left, top, scaleX, scaleY, angle, visible (no width/height)
+ * - Group:       left, top, width, height, angle, visible (children handled separately)
+ * - CreativeBox/Audio: no merge (pass-through)
+ */
+export const mergeLayoutFromReference = (
+	base: CanvasElementJSON,
+	layoutReference: CanvasElementJSON,
+): CanvasElementJSON => {
+	if (isCreativeBoxJSON(base) || isAudioJSON(base)) {
+		return base;
+	}
+
+	const layoutKeys = getLayoutKeysForElement(base);
+	const merged = { ...base } as Record<string, unknown>;
+	const ref = layoutReference as Record<string, unknown>;
+
+	for (const key of layoutKeys) {
+		if (ref[key] !== undefined) {
+			merged[key] = ref[key];
+		}
+	}
+
+	return merged as CanvasElementJSON;
+};
+
+/**
+ * Batch version: merges layout from reference objects onto base objects.
+ * For each layer, if a matching reference exists, layout properties are taken from it;
+ * otherwise the base-adapted object is kept as-is.
+ */
+export const mergeLayoutFromReferenceObjects = (
+	baseObjects: Record<string, CanvasElementJSON>,
+	referenceObjects: Record<string, CanvasElementJSON>,
+): Record<string, CanvasElementJSON> => {
+	const merged: Record<string, CanvasElementJSON> = {};
+	for (const [layerId, baseObj] of Object.entries(baseObjects)) {
+		if (referenceObjects[layerId]) {
+			merged[layerId] = mergeLayoutFromReference(baseObj, referenceObjects[layerId]);
+		} else {
+			merged[layerId] = baseObj;
+		}
+	}
+	return merged;
 };
 
 // ============================================================================
