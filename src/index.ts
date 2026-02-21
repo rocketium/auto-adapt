@@ -7,6 +7,8 @@ export {
 	getAdaptedObjectsJSON,
 	resolveObjectsForSize,
 	applyAdaptedAsOverrides,
+	mergeLayoutFromReference,
+	mergeLayoutFromReferenceObjects,
 } from './adapter';
 export {
 	findClosestSizeWithMatches,
@@ -28,6 +30,7 @@ export {
 export {
 	isTextJSON,
 	isImageJSON,
+	isVideoJSON,
 	isShapeJSON,
 	isSVGContainerJSON,
 	isRoundedRectJSON,
