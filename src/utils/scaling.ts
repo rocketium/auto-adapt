@@ -427,6 +427,7 @@ export const adaptTextSkew = (
 		height: object.height * heightRatio,
 		autoFitSizes: scaleAutoFitSizes(object.autoFitSizes, scalingRatio, closestHeight),
 		cornerRadius: scaleCornerRadius(object.cornerRadius, scalingRatio),
+		...getScaledBorderJSON({ object: object as CanvasElementJSON, scalingRatio }),
 		fontSize: object.fontSize * scalingRatio,
 		wordStyle: adaptWordStyleFontSizes({ wordStyle: object.wordStyle || [], scalingRatio }),
 	};
@@ -448,6 +449,7 @@ export const adaptImageSkew = (
 		imageLeft: (object.imageLeft ?? 0) * widthRatio,
 		imageTop: (object.imageTop ?? 0) * heightRatio,
 		cornerRadius: scaleCornerRadius(object.cornerRadius, scalingRatio),
+		...getScaledBorderJSON({ object: object as CanvasElementJSON, scalingRatio }),
 	};
 };
 
@@ -511,7 +513,6 @@ export const adaptGroupChildText = (
 	groupObject: TextContainerJSON,
 	scalingRatio: number,
 	closestHeight: number,
-	parentObject: CanvasElementJSON,
 ): TextContainerJSON => {
 	return {
 		...groupObject,
@@ -522,7 +523,7 @@ export const adaptGroupChildText = (
 		wordSpacing: groupObject.wordSpacing ? groupObject.wordSpacing * scalingRatio : 0,
 		padding: scalePadding(groupObject.padding, scalingRatio),
 		cornerRadius: scaleCornerRadius(groupObject.cornerRadius, scalingRatio),
-		...getScaledBorderJSON({ object: parentObject, scalingRatio }),
+		...getScaledBorderJSON({ object: groupObject as CanvasElementJSON, scalingRatio }),
 		autoFitSizes: scaleAutoFitSizes(groupObject.autoFitSizes, scalingRatio, closestHeight),
 		fontSize: groupObject.fontSize * scalingRatio,
 		wordStyle: adaptWordStyleFontSizes({ wordStyle: groupObject.wordStyle || [], scalingRatio }),
@@ -532,7 +533,6 @@ export const adaptGroupChildText = (
 export const adaptGroupChildImage = (
 	groupObject: ImageContainerJSON,
 	scalingRatio: number,
-	parentObject: CanvasElementJSON,
 ): ImageContainerJSON => {
 	return {
 		...groupObject,
@@ -544,14 +544,13 @@ export const adaptGroupChildImage = (
 		imageLeft: (groupObject.imageLeft ?? 0) * scalingRatio,
 		imageTop: (groupObject.imageTop ?? 0) * scalingRatio,
 		cornerRadius: scaleCornerRadius(groupObject.cornerRadius, scalingRatio),
-		...getScaledBorderJSON({ object: parentObject, scalingRatio }),
+		...getScaledBorderJSON({ object: groupObject as CanvasElementJSON, scalingRatio }),
 	};
 };
 
 export const adaptGroupChildSvg = (
 	svgContainer: SvgJSON,
 	scalingRatio: number,
-	parentObject: CanvasElementJSON,
 ): SvgJSON => {
 	return {
 		...svgContainer,
@@ -562,14 +561,13 @@ export const adaptGroupChildSvg = (
 		imageScale: (svgContainer.imageScale ?? 1) * scalingRatio,
 		imageLeft: (svgContainer.imageLeft ?? 0) * scalingRatio,
 		imageTop: (svgContainer.imageTop ?? 0) * scalingRatio,
-		...getScaledBorderJSON({ object: parentObject, scalingRatio }),
+		...getScaledBorderJSON({ object: svgContainer as CanvasElementJSON, scalingRatio }),
 	} as SvgJSON;
 };
 
 export const adaptGroupChildRoundedRect = (
 	roundedRectObject: RoundedRectJSON,
 	scalingRatio: number,
-	parentObject: CanvasElementJSON,
 ): RoundedRectJSON => {
 	return {
 		...roundedRectObject,
@@ -578,14 +576,13 @@ export const adaptGroupChildRoundedRect = (
 		width: roundedRectObject.width * scalingRatio,
 		height: roundedRectObject.height * scalingRatio,
 		cornerRadius: scaleCornerRadius(roundedRectObject.cornerRadius, scalingRatio),
-		...getScaledBorderJSON({ object: parentObject, scalingRatio }),
+		...getScaledBorderJSON({ object: roundedRectObject as CanvasElementJSON, scalingRatio }),
 	};
 };
 
 export const adaptGroupChildShape = (
 	groupObject: CanvasElementJSON,
 	scalingRatio: number,
-	parentObject: CanvasElementJSON,
 ): CanvasElementJSON => {
 	return {
 		...groupObject,
@@ -593,6 +590,6 @@ export const adaptGroupChildShape = (
 		top: num(groupObject, 'top') * scalingRatio,
 		scaleX: num(groupObject, 'scaleX', 1) * scalingRatio,
 		scaleY: num(groupObject, 'scaleY', 1) * scalingRatio,
-		...getScaledBorderJSON({ object: parentObject, scalingRatio }),
+		...getScaledBorderJSON({ object: groupObject, scalingRatio }),
 	} as CanvasElementJSON;
 };
