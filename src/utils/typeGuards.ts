@@ -6,6 +6,7 @@ import type {
 	RoundedRectJSON,
 	SvgJSON,
 	TextContainerJSON,
+	VideoContainerJSON,
 } from '../types/canvas';
 
 export const isTextJSON = (object: CanvasElementJSON): object is TextContainerJSON => {
@@ -34,6 +35,10 @@ export const isGroupJSON = (object: CanvasElementJSON | undefined): object is Gr
 
 export const isCreativeBoxJSON = (object: CanvasElementJSON): boolean => {
 	return object?.dataType === 'CREATIVE_BOX';
+};
+
+export const isVideoJSON = (object: CanvasElementJSON): object is VideoContainerJSON => {
+	return object?.dataType === 'VIDEO';
 };
 
 export const isAudioJSON = (object: CanvasElementJSON): boolean => {
