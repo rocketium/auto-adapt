@@ -1,6 +1,6 @@
 {
 	"name": "@rocketium/auto-adapt",
-	"version": "2.1.0",
+	"version": "2.2.0",
 	"description": "Layout adaptation engine for auto-sizing canvas elements across different dimensions",
 	"license": "MIT",
 	"main": "./dist/index.js",
