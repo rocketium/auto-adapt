@@ -234,4 +234,4 @@ Publishing uses the Rocketium org account. Personal `~/.npmrc` is left unchanged
 
 ## License
 
-MIT
+Proprietary - All Rights Reserved. No use, copy, or distribution without written permission from Rocketium.
