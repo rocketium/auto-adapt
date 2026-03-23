@@ -53,51 +53,40 @@ type ScoredSize = SizeInput & { matchPercentage: number };
 /**
  * Core scoring algorithm used by both string-based and object-based size matching.
  * Computes a weighted score (90% aspect ratio similarity + 10% euclidean distance)
- * for each candidate size relative to the target, and returns scored results
- * sorted descending by matchPercentage.
+ * using absolute scoring so each candidate's matchPercentage is meaningful
+ * independently of how many other candidates exist.
+ *
+ * AR similarity:  min(ratio1, ratio2) / max(ratio1, ratio2)
+ * ED similarity:  1 - euclideanDist / max(diagonal_adapt, diagonal_candidate)
  */
 const computeSizeMatchScores = (sizes: SizeInput[], adaptSize: string): ScoredSize[] => {
 	const [adaptWidth, adaptHeight] = getNormalizedSizeValue(adaptSize).split('x').map(Number);
 	const adaptRatio = adaptWidth / adaptHeight;
+	const adaptDiagonal = Math.sqrt(adaptWidth * adaptWidth + adaptHeight * adaptHeight);
 
-	const sizeDistanceMap = new Map<string, { aspectRatioDistance: number; euclideanDistance: number }>();
+	const scored: ScoredSize[] = [];
 
 	for (const size of sizes) {
-		const ratio = size.width / size.height;
-		if (isNaN(ratio) || isNaN(adaptRatio)) continue;
+		const candidateRatio = size.width / size.height;
+		if (isNaN(candidateRatio) || isNaN(adaptRatio)) {
+			scored.push({ ...size, matchPercentage: MIN_MATCH_PERCENTAGE });
+			continue;
+		}
 
-		const aspectRatioDistance = Math.abs(adaptRatio - ratio);
+		const arSimilarity = Math.min(adaptRatio, candidateRatio) / Math.max(adaptRatio, candidateRatio);
+
 		const euclideanDistance = getEuclideanDistanceBetweenPoints({
 			x1: adaptWidth,
 			y1: adaptHeight,
 			x2: size.width,
 			y2: size.height,
 		});
+		const candidateDiagonal = Math.sqrt(size.width * size.width + size.height * size.height);
+		const maxDiagonal = Math.max(adaptDiagonal, candidateDiagonal);
+		const edSimilarity = maxDiagonal === 0 ? 1 : Math.max(0, 1 - euclideanDistance / maxDiagonal);
 
-		sizeDistanceMap.set(size.key, { aspectRatioDistance, euclideanDistance });
-	}
-
-	const maxAspectRatioDistance = Math.max(...Array.from(sizeDistanceMap.values()).map((v) => v.aspectRatioDistance));
-	const maxEuclideanDistance = Math.max(...Array.from(sizeDistanceMap.values()).map((v) => v.euclideanDistance));
-
-	const scored: ScoredSize[] = [];
-
-	for (const size of sizes) {
-		const distances = sizeDistanceMap.get(size.key);
-		if (!distances) {
-			scored.push({ ...size, matchPercentage: MIN_MATCH_PERCENTAGE });
-			continue;
-		}
-
-		const normalizedAspectRatio =
-			maxAspectRatioDistance === 0 ? 1 : 1 - distances.aspectRatioDistance / maxAspectRatioDistance;
-		const normalizedEuclidean =
-			maxEuclideanDistance === 0 ? 1 : 1 - distances.euclideanDistance / maxEuclideanDistance;
-
-		const rawScore = normalizedAspectRatio * ASPECT_RATIO_WEIGHT + normalizedEuclidean * SCALE_DISTANCE_WEIGHT;
-		const matchPercentage = Math.round(
-			Math.max(MIN_MATCH_PERCENTAGE, Math.min(MAX_MATCH_PERCENTAGE, rawScore * 100)),
-		);
+		const rawScore = arSimilarity * ASPECT_RATIO_WEIGHT + edSimilarity * SCALE_DISTANCE_WEIGHT;
+		const matchPercentage = Math.round(Math.max(MIN_MATCH_PERCENTAGE, Math.min(MAX_MATCH_PERCENTAGE, rawScore * 100)));
 
 		scored.push({ ...size, matchPercentage });
 	}

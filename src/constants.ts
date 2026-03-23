@@ -7,7 +7,7 @@ export const THRESHOLD_FOR_NOT_SKEWING = 90;
 export const ASPECT_RATIO_WEIGHT = 0.9;
 /** Weight for euclidean distance in size matching (10%) */
 export const SCALE_DISTANCE_WEIGHT = 0.1;
-export const MIN_MATCH_PERCENTAGE = 20;
+export const MIN_MATCH_PERCENTAGE = 10;
 export const MAX_MATCH_PERCENTAGE = 100;
 export const DEFAULT_BORDER_PROPERTIES = {
 	stroke: 'rgba(0, 0, 0, 1)',
