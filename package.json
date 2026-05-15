@@ -36,10 +36,13 @@
 		"postpublish": "git push origin HEAD --tags",
 		"release:patch": "npm version patch && npm publish",
 		"release:minor": "npm version minor && npm publish",
-		"release:major": "npm version major && npm publish"
+		"release:major": "npm version major && npm publish",
+		"check-exact-version": "node scripts/check-exact-package-versions.cjs",
+		"install-lefthook": "node scripts/install-lefthook.cjs",
+		"prepare": "npm run install-lefthook"
 	},
 	"peerDependencies": {
-		"@types/fabric": "^5.3.9"
+		"@types/fabric": "5.3.11"
 	},
 	"peerDependenciesMeta": {
 		"@types/fabric": {
@@ -47,18 +50,20 @@
 		}
 	},
 	"devDependencies": {
-		"@types/fabric": "^5.3.9",
-		"@types/node": "^22.0.0",
-		"@typescript-eslint/eslint-plugin": "^8.0.0",
-		"@typescript-eslint/parser": "^8.0.0",
-		"eslint": "^9.0.0",
-		"eslint-config-prettier": "^10.0.0",
-		"prettier": "^3.0.0",
-		"tsup": "^8.0.0",
-		"typescript": "^5.5.0"
+		"@types/fabric": "5.3.11",
+		"@types/node": "22.19.11",
+		"@typescript-eslint/eslint-plugin": "8.56.0",
+		"@typescript-eslint/parser": "8.56.0",
+		"eslint": "9.39.2",
+		"eslint-config-prettier": "10.1.8",
+		"prettier": "3.8.1",
+		"tsup": "8.5.1",
+		"typescript": "5.9.3",
+		"lefthook": "2.1.6"
 	},
 	"engines": {
-		"node": ">=20"
+		"node": ">=24",
+		"npm": ">11.12.1"
 	},
 	"keywords": [
 		"layout",
